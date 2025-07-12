@@ -59,3 +59,12 @@
   border-radius: 6px;
   padding: 8px 12px;
 }
+
+.alert-line.no-signal {
+  background-color: #fffbe6; /* light yellow */
+  border: 1px solid #ffe58f;
+}
+
+.alert-line.no-signal .alert-text {
+  color: #b08b00;
+}

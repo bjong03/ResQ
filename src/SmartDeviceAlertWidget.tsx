@@ -5,6 +5,7 @@ import "./SmartDeviceAlertWidget.scss";
 interface FireAlert {
   deviceId: string;
   alert: string;
+  type: "fire" | "no-signal";
 }
 
 interface EmergencyContact {
@@ -30,11 +31,13 @@ export const SmartDeviceAlertWidget = () => {
 
       for (const [deviceId, status] of Object.entries(data)) {
         if (status["Fire Detected"] === true) {
-          alerts.push({ deviceId, alert: "Potential Fire" });
+          alerts.push({ deviceId, alert: "Potential Fire", type: "fire" });
+        } else if (status["Is On"] === false) {
+          alerts.push({ deviceId, alert: "No Signal Found", type: "no-signal" });
         }
       }
 
-      console.log("Filtered Fire Alerts:", alerts);
+      console.log("Filtered Alerts:", alerts);
       setFireAlerts(alerts);
     };
 
@@ -62,10 +65,13 @@ export const SmartDeviceAlertWidget = () => {
       {/* Tab Content */}
       {activeTab === "alerts" ? (
         fireAlerts.map((alert) => (
-          <div key={alert.deviceId} className="alert-line">
+          <div
+            key={alert.deviceId}
+            className={`alert-line ${alert.type === "no-signal" ? "no-signal" : ""}`}
+          >
             <img
-              src="firedetected.png"
-              alt="Smoke Detector"
+              src={alert.type === "fire" ? "firedetected.png" : "nosignal.png"}
+              alt={alert.type === "fire" ? "Fire Detected" : "No Signal"}
               className="alert-icon"
             />
             <span className="alert-text">
