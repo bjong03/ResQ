@@ -14,6 +14,13 @@ interface EmergencyContact {
   phone: string;
 }
 
+interface Person {
+  Name: string;
+  DOB: string;
+  Unit: number;
+  "Medical Conditions": string;
+}
+
 const mockContacts: EmergencyContact[] = [
   { name: "John Smith", role: "Fire Chief", phone: "555-123-4567" },
   { name: "Emily Chen", role: "Safety Officer", phone: "555-987-6543" },
@@ -22,43 +29,61 @@ const mockContacts: EmergencyContact[] = [
 
 export const SmartDeviceAlertWidget = () => {
   const [fireAlerts, setFireAlerts] = useState<FireAlert[]>([]);
-  const [activeTab, setActiveTab] = useState<"alerts" | "contacts">("alerts");
+  const [directory, setDirectory] = useState<Person[]>([]);
+  const [activeTab, setActiveTab] = useState<"alerts" | "directory" | "contacts">("alerts");
 
   useEffect(() => {
     const fetchData = async () => {
       const data = await DeviceStatusApi.getData();
       const alerts: FireAlert[] = [];
+      const people: Person[] = [];
 
-      for (const [deviceId, status] of Object.entries(data)) {
-        const unit = status["Unit"];
-
-        if (status["Fire Detected"] === true && status["Is Exit"] === false) {
-          alerts.push({
-            deviceId,
-            alert: `Unit ${unit}, ${deviceId}: Fire Detected`,
-            type: "fire",
-          });
-        } else if (status["Is On"] === false) {
-          alerts.push({
-            deviceId,
-            alert: `Unit ${unit}, ${deviceId}: No Signal`,
-            type: "no-signal",
-          });
-        } else if (status["Fire Detected"] === true && status["Is Exit"] === true) {
-          alerts.push({
-            deviceId,
-            alert: `Unit ${unit}, ${deviceId}: Exit Blocked`,
-            type: "exit-blocked",
-          });
+      for (const [key, status] of Object.entries(data)) {
+        if (key.startsWith("person")) {
+          people.push(status as Person);
+        } else {
+          const unit = status["Unit"];
+          if (status["Fire Detected"] === true && status["Is Exit"] === false) {
+            alerts.push({
+              deviceId: key,
+              alert: `Unit ${unit}, ${key}: Fire Detected`,
+              type: "fire",
+            });
+          } else if (status["Is On"] === false) {
+            alerts.push({
+              deviceId: key,
+              alert: `Unit ${unit}, ${key}: No Signal`,
+              type: "no-signal",
+            });
+          } else if (status["Fire Detected"] === true && status["Is Exit"] === true) {
+            alerts.push({
+              deviceId: key,
+              alert: `Unit ${unit}, ${key}: Exit Blocked`,
+              type: "exit-blocked",
+            });
+          }
         }
       }
 
-      console.log("Filtered Alerts:", alerts);
       setFireAlerts(alerts);
+      setDirectory(people);
     };
 
     fetchData();
   }, []);
+
+  const getPersonIcon = (condition: string) => {
+    switch (condition.toLowerCase()) {
+      case "mobility":
+        return "personmobility.png";
+      case "vision":
+        return "personvision.png";
+      case "hearing":
+        return "personhearing.png";
+      default:
+        return "person.png";
+    }
+  };
 
   return (
     <div className="smart-alert-widget">
@@ -69,6 +94,12 @@ export const SmartDeviceAlertWidget = () => {
           onClick={() => setActiveTab("alerts")}
         >
           Alerts
+        </button>
+        <button
+          className={activeTab === "directory" ? "tab active" : "tab"}
+          onClick={() => setActiveTab("directory")}
+        >
+          Directory
         </button>
         <button
           className={activeTab === "contacts" ? "tab active" : "tab"}
@@ -105,6 +136,24 @@ export const SmartDeviceAlertWidget = () => {
             <span className="alert-text">{alert.alert}</span>
           </div>
         ))
+      ) : activeTab === "directory" ? (
+        <div className="directory-list">
+          {directory.map((person, index) => (
+            <div key={index} className="person-line">
+              <img
+                src={getPersonIcon(person["Medical Conditions"])}
+                alt="Person"
+                className="alert-icon"
+              />
+              <div className="person-details">
+                Name: {person.Name} <br />
+                Unit: {person.Unit} <br />
+                Date of Birth: {person.DOB} <br />
+                Medical Conditions: {person["Medical Conditions"]}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="contacts-list">
           {mockContacts.map((contact, index) => (

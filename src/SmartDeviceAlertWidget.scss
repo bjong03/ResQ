@@ -79,3 +79,29 @@
   color: #b08b00;
 }
 
+.directory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.person-line {
+  display: flex;
+  align-items: flex-start;
+  background-color: #e8f5e9; /* light green */
+  border: 1px solid #a5d6a7;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.person-line .alert-icon {
+  margin-right: 10px;
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+}
+
+.person-details {
+  line-height: 1.6;
+}
+
