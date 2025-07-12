@@ -7,7 +7,7 @@
 import "./App.scss";
 
 import type { ScreenViewport } from "@itwin/core-frontend";
-import { FitViewTool, IModelApp, StandardViewId } from "@itwin/core-frontend";
+import { FitViewTool, IModelApp, StandardViewId, IModelConnection } from "@itwin/core-frontend";
 import { ECSchemaRpcInterface } from "@itwin/ecschema-rpcinterface-common";
 import { Flex, ProgressLinear } from "@itwin/itwinui-react";
 import {
@@ -41,6 +41,14 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Auth } from "./Auth";
 import { history } from "./history";
 import { unifiedSelectionStorage } from "./selectionStorage";
+import { Visualization } from "./Visualization";
+
+//Data Federation Imports
+import { DeviceStatusApi } from "./DeviceStatusApi";
+
+//Decorators
+import { SmartDeviceDecorator } from "./SmartDeviceDecorator"
+import { SmartDeviceListWidgetProvider } from "./SmartDeviceListWidgetProvider";
 
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
@@ -133,11 +141,15 @@ const App: React.FC = () => {
   );
 
   const onIModelAppInit = useCallback(async () => {
-    // iModel now initialized
-    await TreeWidget.initialize();
-    await PropertyGridManager.initialize();
-    await MeasureTools.startup();
-    MeasurementActionToolbar.setDefaultActionProvider();
+      IModelApp.viewManager.onViewOpen.addOnce(async (viewport) => {
+          Visualization.changeBackground(viewport, "#add8e6");
+      const data = await DeviceStatusApi.getData();
+      IModelApp.viewManager.addDecorator (new SmartDeviceDecorator());
+      });
+  }, []);
+
+  const onIModelConnected = useCallback(async (iModel: IModelConnection) => {
+    console.log(`Connected to iModel: ${iModel.name}`);
   }, []);
 
   return (
@@ -157,86 +169,10 @@ const App: React.FC = () => {
         viewCreatorOptions={viewCreatorOptions}
         enablePerformanceMonitors={true} // see description in the README (https://www.npmjs.com/package/@itwin/web-viewer-react)
         onIModelAppInit={onIModelAppInit}
-        mapLayerOptions={{
-          BingMaps: {
-            key: "key",
-            value: process.env.IMJS_BING_MAPS_KEY ?? "",
-          },
-        }}
-        backendConfiguration={{
-          defaultBackend: {
-            rpcInterfaces: [ECSchemaRpcInterface],
-          },
-        }}
+        onIModelConnected={onIModelConnected}
         uiProviders={[
-          new ViewerNavigationToolsProvider(),
-          new ViewerContentToolsProvider({
-            vertical: {
-              measureGroup: false,
-            },
-          }),
-          new ViewerStatusbarItemsProvider(),
-          {
-            id: "TreeWidgetUIProvider",
-            getWidgets: () => [
-              createTreeWidget({
-                trees: [
-                  {
-                    id: ModelsTreeComponent.id,
-                    getLabel: () => ModelsTreeComponent.getLabel(),
-                    render: (props) => (
-                      <ModelsTreeComponent
-                        getSchemaContext={(iModel) => iModel.schemaContext}
-                        density={props.density}
-                        selectionStorage={unifiedSelectionStorage}
-                        selectionMode={"extended"}
-                        onPerformanceMeasured={props.onPerformanceMeasured}
-                        onFeatureUsed={props.onFeatureUsed}
-                      />
-                    ),
-                  },
-                  {
-                    id: CategoriesTreeComponent.id,
-                    getLabel: () => CategoriesTreeComponent.getLabel(),
-                    render: (props) => (
-                      <CategoriesTreeComponent
-                        getSchemaContext={(iModel) => iModel.schemaContext}
-                        density={props.density}
-                        selectionStorage={unifiedSelectionStorage}
-                        onPerformanceMeasured={props.onPerformanceMeasured}
-                        onFeatureUsed={props.onFeatureUsed}
-                      />
-                    ),
-                  },
-                ],
-              }),
-            ],
-          },
-          {
-            id: "PropertyGridUIProvider",
-            getWidgets: () => [
-              createPropertyGrid({
-                autoExpandChildCategories: true,
-                ancestorsNavigationControls: (props) => (
-                  <AncestorsNavigationControls {...props} />
-                ),
-                contextMenuItems: [
-                  (props) => <CopyPropertyTextContextMenuItem {...props} />,
-                ],
-                settingsMenuItems: [
-                  (props) => (
-                    <ShowHideNullValuesSettingsMenuItem
-                      {...props}
-                      persist={true}
-                    />
-                  ),
-                ],
-              }),
-            ],
-          },
-          new MeasureToolsUiItemsProvider(),
+          new SmartDeviceListWidgetProvider(), // Instantiating the provider!
         ]}
-        selectionStorage={unifiedSelectionStorage}
       />
     </div>
   );
