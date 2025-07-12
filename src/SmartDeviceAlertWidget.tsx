@@ -30,6 +30,7 @@ const mockContacts: EmergencyContact[] = [
 export const SmartDeviceAlertWidget = () => {
   const [fireAlerts, setFireAlerts] = useState<FireAlert[]>([]);
   const [directory, setDirectory] = useState<Person[]>([]);
+  const [unitsWithFire, setUnitsWithFire] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<"alerts" | "directory" | "contacts">("alerts");
 
   useEffect(() => {
@@ -37,18 +38,23 @@ export const SmartDeviceAlertWidget = () => {
       const data = await DeviceStatusApi.getData();
       const alerts: FireAlert[] = [];
       const people: Person[] = [];
+      const fireUnits: Set<number> = new Set();
 
       for (const [key, status] of Object.entries(data)) {
-        if (key.startsWith("person")) {
+        if ("Name" in status && "DOB" in status && "Medical Conditions" in status) {
           people.push(status as Person);
-        } else {
+        }
+
+        if ("Is On" in status) {
           const unit = status["Unit"];
+
           if (status["Fire Detected"] === true && status["Is Exit"] === false) {
             alerts.push({
               deviceId: key,
               alert: `Unit ${unit}, ${key}: Fire Detected`,
               type: "fire",
             });
+            fireUnits.add(unit);
           } else if (status["Is On"] === false) {
             alerts.push({
               deviceId: key,
@@ -61,12 +67,14 @@ export const SmartDeviceAlertWidget = () => {
               alert: `Unit ${unit}, ${key}: Exit Blocked`,
               type: "exit-blocked",
             });
+            fireUnits.add(unit);
           }
         }
       }
 
       setFireAlerts(alerts);
       setDirectory(people);
+      setUnitsWithFire(Array.from(fireUnits));
     };
 
     fetchData();
@@ -138,21 +146,27 @@ export const SmartDeviceAlertWidget = () => {
         ))
       ) : activeTab === "directory" ? (
         <div className="directory-list">
-          {directory.map((person, index) => (
-            <div key={index} className="person-line">
-              <img
-                src={getPersonIcon(person["Medical Conditions"])}
-                alt="Person"
-                className="alert-icon"
-              />
-              <div className="person-details">
-                Name: {person.Name} <br />
-                Unit: {person.Unit} <br />
-                Date of Birth: {person.DOB} <br />
-                Medical Conditions: {person["Medical Conditions"]}
+          {directory.map((person, index) => {
+            const isInFireUnit = unitsWithFire.includes(person.Unit);
+            return (
+              <div
+                key={index}
+                className={`person-line ${isInFireUnit ? "highlight-fire" : ""}`}
+              >
+                <img
+                  src={getPersonIcon(person["Medical Conditions"])}
+                  alt="Person"
+                  className="alert-icon"
+                />
+                <div className="person-details">
+                  Name: {person.Name} <br />
+                  Unit: {person.Unit} <br />
+                  Date of Birth: {person.DOB} <br />
+                  Medical Conditions: {person["Medical Conditions"]}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="contacts-list">
@@ -167,3 +181,4 @@ export const SmartDeviceAlertWidget = () => {
     </div>
   );
 };
+

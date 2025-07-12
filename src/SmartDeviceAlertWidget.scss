@@ -105,3 +105,9 @@
   line-height: 1.6;
 }
 
+.person-line.highlight-fire {
+  background-color: #ffe5e5;
+  border: 2px solid red;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
