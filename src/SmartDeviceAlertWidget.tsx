@@ -5,7 +5,7 @@ import "./SmartDeviceAlertWidget.scss";
 interface FireAlert {
   deviceId: string;
   alert: string;
-  type: "fire" | "no-signal";
+  type: "fire" | "no-signal" | "exit-blocked";
 }
 
 interface EmergencyContact {
@@ -30,10 +30,26 @@ export const SmartDeviceAlertWidget = () => {
       const alerts: FireAlert[] = [];
 
       for (const [deviceId, status] of Object.entries(data)) {
-        if (status["Fire Detected"] === true) {
-          alerts.push({ deviceId, alert: "Potential Fire", type: "fire" });
+        const unit = status["Unit"];
+
+        if (status["Fire Detected"] === true && status["Is Exit"] === false) {
+          alerts.push({
+            deviceId,
+            alert: `Unit ${unit}, ${deviceId}: Fire Detected`,
+            type: "fire",
+          });
         } else if (status["Is On"] === false) {
-          alerts.push({ deviceId, alert: "No Signal Found", type: "no-signal" });
+          alerts.push({
+            deviceId,
+            alert: `Unit ${unit}, ${deviceId}: No Signal`,
+            type: "no-signal",
+          });
+        } else if (status["Fire Detected"] === true && status["Is Exit"] === true) {
+          alerts.push({
+            deviceId,
+            alert: `Unit ${unit}, ${deviceId}: Exit Blocked`,
+            type: "exit-blocked",
+          });
         }
       }
 
@@ -67,16 +83,26 @@ export const SmartDeviceAlertWidget = () => {
         fireAlerts.map((alert) => (
           <div
             key={alert.deviceId}
-            className={`alert-line ${alert.type === "no-signal" ? "no-signal" : ""}`}
+            className={`alert-line ${
+              alert.type === "no-signal"
+                ? "no-signal"
+                : alert.type === "exit-blocked"
+                ? "exit-blocked"
+                : ""
+            }`}
           >
             <img
-              src={alert.type === "fire" ? "firedetected.png" : "nosignal.png"}
-              alt={alert.type === "fire" ? "Fire Detected" : "No Signal"}
+              src={
+                alert.type === "fire"
+                  ? "firedetected.png"
+                  : alert.type === "no-signal"
+                  ? "nosignal.png"
+                  : "exitblocked.png"
+              }
+              alt={alert.alert}
               className="alert-icon"
             />
-            <span className="alert-text">
-              <strong>{alert.deviceId}</strong>: {alert.alert}
-            </span>
+            <span className="alert-text">{alert.alert}</span>
           </div>
         ))
       ) : (

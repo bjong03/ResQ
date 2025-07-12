@@ -26,6 +26,16 @@
   color: #c00;
 }
 
+.alert-line.exit-blocked {
+  /* Same red styling as fire alerts */
+  background-color: #fff3f3;
+  border: 1px solid #ffa8a8;
+}
+
+.alert-line.exit-blocked .alert-text {
+  color: #c00;
+}
+
 .tabs {
   display: flex;
   gap: 8px;
@@ -68,3 +78,4 @@
 .alert-line.no-signal .alert-text {
   color: #b08b00;
 }
+
