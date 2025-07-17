@@ -50,6 +50,9 @@ import { DeviceStatusApi } from "./DeviceStatusApi";
 import { SmartDeviceDecorator } from "./SmartDeviceDecorator"
 import { SmartDeviceListWidgetProvider } from "./SmartDeviceListWidgetProvider";
 
+//Smart Chatbot
+import SmartChatWidget from "./SmartChatWidget";
+
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
   const [iTwinId, setITwinId] = useState(process.env.IMJS_ITWIN_ID);
@@ -174,6 +177,7 @@ const App: React.FC = () => {
           new SmartDeviceListWidgetProvider(), // Instantiating the provider!
         ]}
       />
+      <SmartChatWidget />
     </div>
   );
 };
