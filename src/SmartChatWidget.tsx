@@ -24,7 +24,7 @@ const SmartChatWidget = () => {
       method: "POST",
       headers: {
         //Add API Key
-        //Authorization: "Bearer Add_API_Key",
+        Authorization: "ADD API KEY",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -47,7 +47,8 @@ const SmartChatWidget = () => {
 
   return (
     <div className="smart-chat-widget">
-      <h3>Ask about your building</h3>
+      <h2>SentryPal</h2>
+      <h3>Your AI Fire Safety Companion</h3>
       <textarea
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
